@@ -1,0 +1,29 @@
+**** PEK Dataset ****
+Unique Locations: 7274
+Unique Users: 8319
+
+**** IST Dataset ****
+Unique Locations: 21788
+Unique Users: 29028
+
+**** JKT Dataset ****
+Unique Locations: 13105
+Unique Users: 9193
+
+**** NYC Dataset ****
+Unique Locations: 3908
+Unique Users: 1077
+
+**** TKY Dataset ****
+Unique Locations: 7057
+Unique Users: 2290
+
+**** Gowala Dataset ****
+Unique Locations: 1280969
+Unique Users: 107092
+
+**** Brightkite Dataset ****
+Unique Locations: 772967
+Unique Users: 51406
+
+
