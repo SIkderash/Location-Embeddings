@@ -5,6 +5,7 @@ import torch
 from torch import nn
 from sklearn.utils import shuffle
 from torch.nn.utils.rnn import pack_padded_sequence
+from tqdm import tqdm
 
 from utils import next_batch
 
@@ -74,7 +75,7 @@ def train_hier(dataset, hier_model, num_epoch, batch_size, device):
 
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(hier_model.parameters())
-    for epoch in range(num_epoch):
+    for epoch in tqdm(range(num_epoch)):
         for batch in next_batch(shuffle(list(zip(src_tokens, src_weekdays, src_ts, src_lens))), batch_size=batch_size):
             src_token, src_weekday, src_t, src_len = zip(*batch)
             src_token, src_weekday = [torch.from_numpy(np.transpose(np.array(list(zip_longest(*item, fillvalue=0))))).long().to(device)

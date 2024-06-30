@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from embed.w2v import *
 
 
@@ -120,7 +121,7 @@ def train_teaser(teaser_model, dataset, window_size, num_neg, batch_size, num_ep
     batch_count = math.ceil(num_epoch * len(pos_pairs) / batch_size)
 
     avg_loss = 0.
-    for epoch in range(num_epoch):
+    for epoch in tqdm(range(num_epoch)):
         for pair_batch in next_batch(shuffle(pos_pairs), batch_size):
             neg_v = dataset.get_neg_v_sampling(len(pair_batch), num_neg)
             neg_v = torch.tensor(neg_v).long().to(device)

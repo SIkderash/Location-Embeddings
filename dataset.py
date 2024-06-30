@@ -7,47 +7,47 @@ from utils import gen_index_map
 
 
 class Dataset:
-    def __init__(self, raw_df, split_days):
-        """
-        @param raw_df: raw DataFrame containing all mobile signaling records.
-            Should have columns: user, check-in time, latitude, longitude, and location id.
-        """
-        # Generate index mappings
-        self.poi2index = gen_index_map(raw_df, 'location id')
-        self.user2index = gen_index_map(raw_df, 'user')
-        
-        # Map the IDs to indices
-        raw_df['loc_index'] = raw_df['location id'].map(self.poi2index)
-        raw_df['user_index'] = raw_df['user'].map(self.user2index)
-        
-        # Rename columns for consistency
-        raw_df = raw_df.rename(columns={'check-in time': 'datetime', 'latitude': 'lat', 'longitude': 'lng'})
-        
-        # Assign the relevant columns to the class attribute
-        self.df = raw_df[['user_index', 'loc_index', 'datetime', 'lat', 'lng']]
-        
-        # Store the number of unique users and locations
-        self.num_user = len(self.user2index)
-        self.num_loc = len(self.poi2index)
-        self.split_days = split_days
-
-    # def __init__(self, raw_df, coor_df, split_days):
+    # def __init__(self, raw_df, split_days):
     #     """
     #     @param raw_df: raw DataFrame containing all mobile signaling records.
-    #         Should have at least three columns: user_id, latlng and datetime.
-    #     @param coor_df: DataFrame containing coordinate information.
-    #         With an index corresponding to latlng, and two columns: lat and lng.
+    #         Should have columns: user, check-in time, latitude, longitude, and location id.
     #     """
-    #     self.poi2index = gen_index_map(raw_df, 'poi_id')
-    #     self.user2index = gen_index_map(raw_df, 'user_id')
-    #     raw_df['loc_index'] = raw_df['poi_id'].map(self.poi2index)
-    #     raw_df['user_index'] = raw_df['user_id'].map(self.user2index)
-    #     raw_df = raw_df.merge(coor_df, on='poi_id', how='left')
+    #     # Generate index mappings
+    #     self.poi2index = gen_index_map(raw_df, 'location id')
+    #     self.user2index = gen_index_map(raw_df, 'user')
+        
+    #     # Map the IDs to indices
+    #     raw_df['loc_index'] = raw_df['location id'].map(self.poi2index)
+    #     raw_df['user_index'] = raw_df['user'].map(self.user2index)
+        
+    #     # Rename columns for consistency
+    #     raw_df = raw_df.rename(columns={'check-in time': 'datetime', 'latitude': 'lat', 'longitude': 'lng'})
+        
+    #     # Assign the relevant columns to the class attribute
     #     self.df = raw_df[['user_index', 'loc_index', 'datetime', 'lat', 'lng']]
-
+        
+    #     # Store the number of unique users and locations
     #     self.num_user = len(self.user2index)
     #     self.num_loc = len(self.poi2index)
     #     self.split_days = split_days
+
+    def __init__(self, raw_df, coor_df, split_days):
+        """
+        @param raw_df: raw DataFrame containing all mobile signaling records.
+            Should have at least three columns: user_id, latlng and datetime.
+        @param coor_df: DataFrame containing coordinate information.
+            With an index corresponding to latlng, and two columns: lat and lng.
+        """
+        self.poi2index = gen_index_map(raw_df, 'poi_id')
+        self.user2index = gen_index_map(raw_df, 'user_id')
+        raw_df['loc_index'] = raw_df['poi_id'].map(self.poi2index)
+        raw_df['user_index'] = raw_df['user_id'].map(self.user2index)
+        raw_df = raw_df.merge(coor_df, on='poi_id', how='left')
+        self.df = raw_df[['user_index', 'loc_index', 'datetime', 'lat', 'lng']]
+
+        self.num_user = len(self.user2index)
+        self.num_loc = len(self.poi2index)
+        self.split_days = split_days
 
     def gen_sequence(self, min_len=0, select_days=None, include_delta=False):
         """

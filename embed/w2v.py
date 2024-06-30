@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from sklearn.utils import shuffle
+from tqdm import tqdm
 
 from utils import next_batch
 
@@ -287,7 +288,7 @@ def train_skipgram(skipgram_model: SkipGram, w2v_dataset: SkipGramData,
     batch_count = math.ceil(num_epoch * len(pos_pairs) / batch_size)
 
     avg_loss = 0.
-    for epoch in range(num_epoch):
+    for epoch in tqdm(range(num_epoch)):
         for pair_batch in next_batch(shuffle(pos_pairs), batch_size):
             neg_v = w2v_dataset.get_neg_v_sampling(len(pair_batch), num_neg)
             neg_v = torch.tensor(neg_v).long().to(device)

@@ -7,19 +7,32 @@ from sklearn.metrics import accuracy_score, recall_score, f1_score, precision_sc
 from sklearn.utils import shuffle
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
-
+from tqdm import tqdm
 from utils import next_batch, create_src_trg, weight_init, top_n_accuracy
-
+import csv
 from scipy.sparse import lil_matrix
+
+# def seq2seq_forward(encoder, decoder, lstm_input, valid_len, pre_len):
+#     his_len = valid_len - pre_len
+#     src_padded_embed = pack_padded_sequence(lstm_input, his_len, batch_first=True, enforce_sorted=False)
+#     _, hc = encoder(src_padded_embed)
+#     trg_embed = torch.stack([torch.cat([lstm_input[i, start - 1:start], lstm_input[i, -pre_len:-1]], dim=0)
+#                              for i, start in enumerate(his_len)], dim=0)
+#     decoder_out, _ = decoder(trg_embed, hc)  # (batch_size, pre_len, hidden_size)
+#     return decoder_out
 
 def seq2seq_forward(encoder, decoder, lstm_input, valid_len, pre_len):
     his_len = valid_len - pre_len
+    # Ensure his_len is on the CPU and of type int64
+    his_len = his_len.cpu().long()
+    
     src_padded_embed = pack_padded_sequence(lstm_input, his_len, batch_first=True, enforce_sorted=False)
     _, hc = encoder(src_padded_embed)
     trg_embed = torch.stack([torch.cat([lstm_input[i, start - 1:start], lstm_input[i, -pre_len:-1]], dim=0)
                              for i, start in enumerate(his_len)], dim=0)
     decoder_out, _ = decoder(trg_embed, hc)  # (batch_size, pre_len, hidden_size)
     return decoder_out
+
 
 
 class Seq2SeqLocPredictor(nn.Module, ABC):
@@ -294,8 +307,11 @@ class RnnLocPredictor(nn.Module, ABC):
         out = self.out_linear(rnn_out_pre)
         return out
 
+import csv
 
-def loc_prediction(dataset, pre_model, pre_len, num_epoch, batch_size, device):
+import csv
+
+def loc_prediction(dataset, pre_model, pre_len, num_epoch, batch_size, device, embed_name, task_name, pre_model_name, patience=10):
     pre_model = pre_model.to(device)
     optimizer = torch.optim.Adam(pre_model.parameters(), lr=1e-4)
     loss_func = nn.CrossEntropyLoss()
@@ -329,7 +345,10 @@ def loc_prediction(dataset, pre_model, pre_len, num_epoch, batch_size, device):
 
     score_log = []
     test_point = int(len(train_set) / batch_size / 2)
-    for epoch in range(num_epoch):
+    best_acc = 0
+    epochs_no_improve = 0
+
+    for epoch in tqdm(range(num_epoch)):
         for i, batch in enumerate(next_batch(shuffle(train_set), batch_size)):
             out, label = pre_func(batch)
             loss = loss_func(out, label)
@@ -351,10 +370,29 @@ def loc_prediction(dataset, pre_model, pre_len, num_epoch, batch_size, device):
                 score_log.append([acc, recall, f1_micro, f1_macro])
                 nni.report_intermediate_result(acc)
 
+                # Early Stopping Check
+                if acc > best_acc:
+                    best_acc = acc
+                    epochs_no_improve = 0
+                else:
+                    epochs_no_improve += 1
+
+                if epochs_no_improve >= patience:
+                    print(f'Early stopping after {epoch+1} epochs')
+                    break
+
+        if epochs_no_improve >= patience:
+            break
+
     best_acc, best_recall, best_f1_micro, best_f1_macro = np.max(score_log, axis=0)
     print('Acc %.6f, Recall %.6f' % (best_acc, best_recall))
     print('F1-micro %.6f, F1-macro %.6f' % (best_f1_micro, best_f1_macro))
     nni.report_final_result(best_acc)
+
+    # Save results to CSV
+    with open('results.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([embed_name, task_name, pre_model_name, best_acc, best_recall, best_f1_micro, best_f1_macro])
 
 
 class MCLocPredictor:

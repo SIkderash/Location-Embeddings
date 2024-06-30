@@ -7,7 +7,7 @@ from torch import nn
 from sklearn.utils import shuffle
 
 from utils import next_batch, weight_init
-
+from tqdm import tqdm
 
 def gen_random_mask(src_valid_lens, src_len, mask_prop):
     """
@@ -208,7 +208,7 @@ def train_ctle(dataset, ctle_model:CTLE, obj_models, mask_prop, num_epoch, batch
     user_ids, src_tokens, src_weekdays, src_ts, src_lens = zip(*dataset.gen_sequence(select_days=0))
 
     optimizer = torch.optim.Adam(list(ctle_model.parameters()) + list(obj_models.parameters()), lr=1e-4)
-    for epoch in range(num_epoch):
+    for epoch in tqdm(range(num_epoch)):
         for batch in next_batch(shuffle(list(zip(src_tokens, src_weekdays, src_ts, src_lens))), batch_size=batch_size):
             # Value filled with num_loc stands for masked tokens that shouldn't be considered.
             src_batch, _, src_t_batch, src_len_batch = zip(*batch)

@@ -105,7 +105,7 @@ def train_tale(tale_model: Tale, dataset: TaleData, window_size, batch_size, num
     batch_count = math.ceil(num_epoch * len(train_set) / batch_size)
 
     avg_loss = 0.
-    for epoch in range(num_epoch):
+    for epoch in tqdm(range(num_epoch)):
         for pair_batch in next_batch(shuffle(train_set), batch_size):
             flatten_batch = []
             for row in pair_batch:
